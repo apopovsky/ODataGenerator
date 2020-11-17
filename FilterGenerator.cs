@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 
@@ -6,6 +7,8 @@ namespace ODataGenerator
 {
     public class FilterGenerator<T>
     {
+        private readonly string[] _supportedMethods = { "all", "any" };
+
         public string Generate(Expression<Func<T, object>> expression)
         {
             return Process(expression.Body, null);
@@ -65,7 +68,10 @@ namespace ODataGenerator
                     var innerAlias = innerLambda.Parameters[0].Name;
                     var filter = Process(innerLambda.Body, innerAlias);
                     var methodName = methodCallExpression.Method.Name.ToLower();
+                    if(!_supportedMethods.Contains(methodName)) throw new NotImplementedException();
                     return $"{property}/{methodName}({innerAlias}:{filter})";
+                default:
+                    throw new NotImplementedException();
             }
 
             return string.Empty;
