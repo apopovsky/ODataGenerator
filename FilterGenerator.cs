@@ -4,7 +4,7 @@ using System.Reflection;
 
 namespace ODataGenerator
 {
-    public class QueryGenerator<T>
+    public class FilterGenerator<T>
     {
         public string Generate(Expression<Func<T, object>> expression)
         {
