@@ -8,25 +8,23 @@ namespace ODataGenerator
     {
         public string Generate(Expression<Func<T, object>> expression)
         {
-            string result = string.Empty;
-
-            return Process(expression.Body);
+            return Process(expression.Body, null);
         }
 
-        private string Process(Expression expression)
+        private string Process(Expression expression, string alias)
         {
             switch (expression.NodeType)
             {
                 case ExpressionType.Convert:
                     var unaryExpression = (UnaryExpression) expression;
-                    return Process(unaryExpression.Operand);
+                    return Process(unaryExpression.Operand, alias);
 
                 case ExpressionType.MemberAccess:
                     var memberExpression = (MemberExpression) expression;
                     var member = memberExpression.Member;
                     if(member is FieldInfo fieldInfo)
                     {
-                        object value = null;
+                        object value;
                         if(fieldInfo.IsStatic)
                         {
                             value = fieldInfo.GetValue(null);
@@ -40,7 +38,7 @@ namespace ODataGenerator
                         return GetConstantValue(value);
                     }
 
-                    return member.Name;
+                    return !string.IsNullOrEmpty(alias) ? $"{alias}/{member.Name}" : member.Name;
 
                 case ExpressionType.Equal:
                 case ExpressionType.NotEqual:
@@ -51,8 +49,8 @@ namespace ODataGenerator
                 case ExpressionType.AndAlso:
                 case ExpressionType.OrElse:
                     var binaryExpression = (BinaryExpression) expression;
-                    var left = WrapIfParenthesisRequired(Process(binaryExpression.Left));
-                    var right = WrapIfParenthesisRequired(Process(binaryExpression.Right));
+                    var left = WrapIfParenthesisRequired(Process(binaryExpression.Left, alias));
+                    var right = WrapIfParenthesisRequired(Process(binaryExpression.Right, alias));
                     var @operator = ResolveOperator(expression.NodeType);
                     return $"{left} " + @operator + $" {right}";
 
@@ -60,6 +58,14 @@ namespace ODataGenerator
                     var valExpression = (ConstantExpression) expression;
                     var val = valExpression.Value;
                     return GetConstantValue(val);
+                case ExpressionType.Call:
+                    var methodCallExpression = (MethodCallExpression) expression;
+                    var property = Process(methodCallExpression.Arguments[0], alias);
+                    var innerLambda = (LambdaExpression) methodCallExpression.Arguments[1];
+                    var innerAlias = innerLambda.Parameters[0].Name;
+                    var filter = Process(innerLambda.Body, innerAlias);
+                    var methodName = methodCallExpression.Method.Name.ToLower();
+                    return $"{property}/{methodName}({innerAlias}:{filter})";
             }
 
             return string.Empty;
