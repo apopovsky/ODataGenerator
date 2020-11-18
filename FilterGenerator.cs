@@ -25,20 +25,11 @@ namespace ODataGenerator
                 case ExpressionType.MemberAccess:
                     var memberExpression = (MemberExpression) expression;
                     var member = memberExpression.Member;
-                    if(member is FieldInfo fieldInfo)
+                    if (memberExpression.Expression ==null ||
+                        memberExpression.Expression.NodeType == ExpressionType.MemberAccess ||
+                        memberExpression.Expression.NodeType == ExpressionType.Constant)
                     {
-                        object value;
-                        if(fieldInfo.IsStatic)
-                        {
-                            value = fieldInfo.GetValue(null);
-                        }
-                        else
-                        {
-                            var f = Expression.Lambda(memberExpression).Compile();
-                            value = f.DynamicInvoke();
-                        }
-
-                        return GetConstantValue(value);
+                        return GetMemberValue(member, memberExpression);
                     }
 
                     return !string.IsNullOrEmpty(alias) ? $"{alias}/{member.Name}" : member.Name;
@@ -73,8 +64,45 @@ namespace ODataGenerator
                 default:
                     throw new NotImplementedException();
             }
+        }
 
-            return string.Empty;
+        private static string GetMemberValue(MemberInfo member, MemberExpression memberExpression)
+        {
+            switch (member)
+            {
+                case FieldInfo fieldInfo:
+                {
+                    object value;
+                    if (fieldInfo.IsStatic)
+                    {
+                        value = fieldInfo.GetValue(null);
+                    }
+                    else
+                    {
+                        var f = Expression.Lambda(memberExpression).Compile();
+                        value = f.DynamicInvoke();
+                    }
+
+                    return GetConstantValue(value);
+                }
+                case PropertyInfo propertyInfo:
+                {
+                    object value;
+                    if (propertyInfo.GetGetMethod().IsStatic)
+                    {
+                        value = propertyInfo.GetValue(null);
+                    }
+                    else
+                    {
+                        var f = Expression.Lambda(memberExpression).Compile();
+                        value = f.DynamicInvoke();
+                    }
+
+                    return GetConstantValue(value);
+                }
+                default:
+                    throw new NotImplementedException();
+            }
         }
 
         private static string WrapIfParenthesisRequired(string terms)
