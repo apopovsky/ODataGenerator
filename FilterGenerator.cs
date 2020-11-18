@@ -19,17 +19,30 @@ namespace ODataGenerator
             switch (expression.NodeType)
             {
                 case ExpressionType.Convert:
-                    var unaryExpression = (UnaryExpression) expression;
-                    return Process(unaryExpression.Operand, alias);
-
                 case ExpressionType.MemberAccess:
-                    var memberExpression = (MemberExpression) expression;
+                    MemberExpression memberExpression;
+                    Type returnType = null;
+                    if (expression is UnaryExpression unaryExpression)
+                    {
+                        if (unaryExpression.Operand.NodeType != ExpressionType.MemberAccess)
+                        {
+                            return Process(unaryExpression.Operand, alias);
+                        }
+
+                        memberExpression = (MemberExpression) unaryExpression.Operand;
+                        returnType = unaryExpression.Type;
+                    }
+                    else
+                    {
+                        memberExpression = (MemberExpression) expression;
+                    }
+                    
                     var member = memberExpression.Member;
                     if (memberExpression.Expression ==null ||
                         memberExpression.Expression.NodeType == ExpressionType.MemberAccess ||
                         memberExpression.Expression.NodeType == ExpressionType.Constant)
                     {
-                        return GetMemberValue(member, memberExpression);
+                        return GetMemberValue(member, memberExpression, returnType);
                     }
 
                     return !string.IsNullOrEmpty(alias) ? $"{alias}/{member.Name}" : member.Name;
@@ -55,9 +68,7 @@ namespace ODataGenerator
                 case ExpressionType.Call:
                     var methodCallExpression = (MethodCallExpression) expression;
                     var property = Process(methodCallExpression.Arguments[0], alias);
-                    var innerLambda = (LambdaExpression) methodCallExpression.Arguments[1];
-                    var innerAlias = innerLambda.Parameters[0].Name;
-                    var filter = Process(innerLambda.Body, innerAlias);
+                    var (innerAlias, filter) = GetInnerFilter(methodCallExpression);
                     var methodName = methodCallExpression.Method.Name.ToLower();
                     if(!_supportedMethods.Contains(methodName)) throw new NotImplementedException();
                     return $"{property}/{methodName}({innerAlias}:{filter})";
@@ -66,7 +77,27 @@ namespace ODataGenerator
             }
         }
 
-        private static string GetMemberValue(MemberInfo member, MemberExpression memberExpression)
+        private (string innerAlias, string filter) GetInnerFilter(MethodCallExpression methodCallExpression)
+        {
+            var expression = methodCallExpression.Arguments[1];
+            string innerAlias = null;
+            string filter = null;
+            if(expression is LambdaExpression innerLambda)
+            {
+                innerAlias = innerLambda.Parameters[0].Name;
+                filter = Process(innerLambda.Body, innerAlias);
+            }
+            else if (expression.NodeType == ExpressionType.MemberAccess && expression is MemberExpression memberExpression)
+            {
+                //var memberInfo = (FieldInfo) memberExpression.Member;
+                var lambdaExpression = Expression.Lambda(memberExpression);
+                var f = lambdaExpression.Compile();
+                var value = f.DynamicInvoke();
+            }
+            return (innerAlias, filter);
+        }
+
+        private static string GetMemberValue(MemberInfo member, MemberExpression memberExpression, Type returnType)
         {
             switch (member)
             {
@@ -83,6 +114,11 @@ namespace ODataGenerator
                         value = f.DynamicInvoke();
                     }
 
+                    if (returnType != null)
+                    {
+                        value = Convert.ChangeType(value, returnType);
+                    }
+
                     return GetConstantValue(value);
                 }
                 case PropertyInfo propertyInfo:
@@ -96,6 +132,11 @@ namespace ODataGenerator
                     {
                         var f = Expression.Lambda(memberExpression).Compile();
                         value = f.DynamicInvoke();
+                    }
+                    
+                    if (returnType != null)
+                    {
+                        value = Convert.ChangeType(value, returnType);
                     }
 
                     return GetConstantValue(value);
