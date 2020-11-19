@@ -3,9 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30621.155
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ODataGenerator", "ODataGenerator.csproj", "{591D8EBB-66CA-473E-8C97-29B46BD2138A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ODataGenerator", "ODataGenerator\ODataGenerator.csproj", "{591D8EBB-66CA-473E-8C97-29B46BD2138A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ODataGeneratorTests", "..\ODataGeneratorTests\ODataGeneratorTests.csproj", "{91EFDC71-602F-4E09-93D2-A7251DA125D6}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ODataGeneratorTests", "ODataGeneratorTests\ODataGeneratorTests.csproj", "{91EFDC71-602F-4E09-93D2-A7251DA125D6}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
