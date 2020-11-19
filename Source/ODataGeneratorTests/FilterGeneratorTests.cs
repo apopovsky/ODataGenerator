@@ -109,13 +109,20 @@ namespace ODataGeneratorTests
         }
 
         [TestMethod]
+        public void Generate_SimpleQueryWithBooleanPropertyBinaryFilter_ValidODataGenerated()
+        {
+            var generated = _filterGenerator.Generate(record => record.IsActive == true);
+            generated.Should().Be("IsActive eq true");
+        }
+
+        [TestMethod, Ignore]
         public void Generate_SimpleQueryWithBooleanPropertyUnaryFilter_ValidODataGenerated()
         {
             var generated = _filterGenerator.Generate(record => record.IsActive);
             generated.Should().Be("IsActive eq true");
         }
         
-        [TestMethod]
+        [TestMethod, Ignore]
         public void Generate_SimpleQueryWithNegatedBooleanPropertyUnaryFilter_ValidODataGenerated()
         {
             var generated = _filterGenerator.Generate(record => !record.IsActive);

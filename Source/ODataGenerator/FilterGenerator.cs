@@ -156,6 +156,10 @@ namespace ODataGenerator
         {
             if (constantValue == null) return "null";
             var value = constantValue.ToString();
+            if (constantValue is bool)
+            {
+                value = value.ToLower();
+            }
             return constantValue.GetType().IsPrimitive ? value : $"'{constantValue}'";
         }
 
