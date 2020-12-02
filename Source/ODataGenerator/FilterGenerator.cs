@@ -65,6 +65,7 @@ namespace ODataGenerator
                     var valExpression = (ConstantExpression) expression;
                     var val = valExpression.Value;
                     return GetConstantValue(val);
+
                 case ExpressionType.Call:
                     var methodCallExpression = (MethodCallExpression) expression;
                     var property = Process(methodCallExpression.Arguments[0], alias);
@@ -72,6 +73,7 @@ namespace ODataGenerator
                     var methodName = methodCallExpression.Method.Name.ToLower();
                     if(!_supportedMethods.Contains(methodName)) throw new NotImplementedException();
                     return $"{property}/{methodName}({innerAlias}:{filter})";
+
                 default:
                     throw new NotImplementedException();
             }
@@ -114,7 +116,9 @@ namespace ODataGenerator
                         value = f.DynamicInvoke();
                     }
 
-                    if (returnType != null)
+                    var valueType = value.GetType();
+                    if (returnType != null && 
+                        (Nullable.GetUnderlyingType(returnType) ?? returnType) != (Nullable.GetUnderlyingType(valueType) ?? valueType))
                     {
                         value = Convert.ChangeType(value, returnType);
                     }
@@ -155,12 +159,21 @@ namespace ODataGenerator
         private static string GetConstantValue(object constantValue)
         {
             if (constantValue == null) return "null";
-            var value = constantValue.ToString();
-            if (constantValue is bool)
+            string stringValue;
+            switch (constantValue)
             {
-                value = value.ToLower();
+                case bool boolValue:
+                    stringValue = boolValue.ToString().ToLower();
+                    break;
+                case DateTime dateTimeValue:
+                    stringValue = dateTimeValue.ToString("yyyy-MM-ddTHH:mm:ssZ");
+                    break;
+                default:
+                    stringValue = constantValue.GetType().IsPrimitive ?
+                        constantValue.ToString(): $"'{constantValue}'" ;
+                    break;
             }
-            return constantValue.GetType().IsPrimitive ? value : $"'{constantValue}'";
+            return stringValue;
         }
 
         private string ResolveOperator(ExpressionType nodeType)
@@ -176,9 +189,9 @@ namespace ODataGenerator
                 case ExpressionType.GreaterThanOrEqual:
                     return "ge";
                 case ExpressionType.LessThan:
-                    return "le";
-                case ExpressionType.LessThanOrEqual:
                     return "lt";
+                case ExpressionType.LessThanOrEqual:
+                    return "le";
                 case ExpressionType.AndAlso:
                     return "and";
                 case ExpressionType.OrElse:

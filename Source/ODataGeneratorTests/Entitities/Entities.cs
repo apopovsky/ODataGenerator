@@ -15,6 +15,8 @@ namespace ODataGeneratorTests
         public int Number { get; set; }
         public IList<Language> Languages { get; set; }
         public bool IsActive { get; set; }
+        public DateTime Created { get; set; }
+        public DateTime? Updated { get; set; }
     }
 
     public class Language : EntityBase

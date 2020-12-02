@@ -128,6 +128,24 @@ namespace ODataGeneratorTests
             var generated = _filterGenerator.Generate(record => !record.IsActive);
             generated.Should().Be("IsActive eq false");
         }
+
+        [TestMethod]
+        public void Generate_DateTimePropertyFilter_ValidODataGenerated()
+        {
+            var date = DateTime.Today;
+            var formatted = date.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            var generated = _filterGenerator.Generate(record => record.Created >= date);
+            generated.Should().Be($"Created ge {formatted}");
+        }
+
+        [TestMethod]
+        public void Generate_NullableDateTimePropertyFilter_ValidODataGenerated()
+        {
+            var date = DateTime.Today;
+            var formatted = date.ToString("yyyy-MM-ddTHH:mm:ssZ");
+            var generated = _filterGenerator.Generate(record => record.Updated <= date);
+            generated.Should().Be($"Updated le {formatted}");
+        }
     }
 
 }
