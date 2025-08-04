@@ -91,7 +91,7 @@ namespace ODataGeneratorTests
             generated.Should().Be("Languages/any(lang:lang/LanguageName eq 'English' and lang/Terms/all(term:term/Text eq 'Term1'))");
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Generate_CollectionQueryWithExternalPredicate_ValidODataGenerated()
         {
             Func<Language, bool> predicate = language => language.LanguageName == "English";
@@ -115,14 +115,14 @@ namespace ODataGeneratorTests
             generated.Should().Be("IsActive eq true");
         }
 
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Generate_SimpleQueryWithBooleanPropertyUnaryFilter_ValidODataGenerated()
         {
             var generated = _filterGenerator.Generate(record => record.IsActive);
             generated.Should().Be("IsActive eq true");
         }
         
-        [TestMethod, Ignore]
+        [TestMethod]
         public void Generate_SimpleQueryWithNegatedBooleanPropertyUnaryFilter_ValidODataGenerated()
         {
             var generated = _filterGenerator.Generate(record => !record.IsActive);
